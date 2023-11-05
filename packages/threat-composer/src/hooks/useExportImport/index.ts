@@ -24,19 +24,17 @@ import { useGlobalSetupContext } from '../../contexts/GlobalSetupContext/context
 import { useMitigationLinksContext } from '../../contexts/MitigationLinksContext/context';
 import { useMitigationsContext } from '../../contexts/MitigationsContext/context';
 import { useThreatsContext } from '../../contexts/ThreatsContext/context';
-import { DataExchangeFormat, TemplateThreatStatement } from '../../customTypes';
+import { DataExchangeFormat, TemplateThreatStatement, Workspace } from '../../customTypes';
 import downloadObjectAsJson from '../../utils/downloadObjectAsJson';
 import getExportFileName from '../../utils/getExportFileName';
 import sanitizeHtml from '../../utils/sanitizeHtml';
 import validateData from '../../utils/validateData';
-import cleanupThreatData from '../../utils/cleanupThreatData';
-import recalculateThreatData from '../../utils/recalculateThreatData';
 
 const SCHEMA_VERSION = 1.0;
 
 const useImportExport = () => {
   const { composerMode } = useGlobalSetupContext();
-  const { currentWorkspace } = useWorkspacesContext();
+  const { currentWorkspace, workspaceList, addWorkspace, switchWorkspace } = useWorkspacesContext();
   const { applicationInfo, setApplicationInfo } = useApplicationInfoContext();
   const { architectureInfo, setArchitectureInfo } = useArchitectureInfoContext();
   const { dataflowInfo, setDataflowInfo } = useDataflowInfoContext();
@@ -47,8 +45,6 @@ const useImportExport = () => {
   const { mitigationLinkList, setMitigationLinkList } = useMitigationLinksContext();
 
   const getWorkspaceData = useCallback((): DataExchangeFormat => {
-    
-    const cleanedThreats = cleanupThreatData(statementList);
     if (composerMode === 'Full') {
       return {
         schema: SCHEMA_VERSION,
@@ -59,13 +55,13 @@ const useImportExport = () => {
         mitigations: mitigationList,
         assumptionLinks: assumptionLinkList,
         mitigationLinks: mitigationLinkList,
-        threats: cleanedThreats,
+        threats: statementList,
       };
     }
-    
+
     return {
       schema: SCHEMA_VERSION,
-      threats: cleanedThreats,
+      threats: statementList,
     };
   }, [composerMode, currentWorkspace, applicationInfo,
     architectureInfo, dataflowInfo,
@@ -115,15 +111,13 @@ const useImportExport = () => {
   }, []);
 
   const importData = useCallback((data: DataExchangeFormat) => {
-    const calculatedThreats = recalculateThreatData(data.threats || []);
-
     if (data.schema > 0) {
       setApplicationInfo(data.applicationInfo || {});
       setArchitectureInfo(data.architecture || {});
       setDataflowInfo(data.dataflow || {});
       setAssumptionList(data.assumptions || []);
       setMitigationList(data.mitigations || []);
-      setStatementList(calculatedThreats);
+      setStatementList(data.threats || []);
       setAssumptionLinkList(data.assumptionLinks || []);
       setMitigationLinkList(data.mitigationLinks || []);
     } else {
@@ -140,6 +134,44 @@ const useImportExport = () => {
     setAssumptionLinkList,
     setMitigationLinkList,
   ]);
+
+
+  const ImportDataIntoCurrentWorkspace = ((data: DataExchangeFormat) => {
+    const parsedData = parseImportedData(data);
+    importData(parsedData);
+  });
+
+  const ExportDataFromCurrentWorkspace = (() => {
+    const stringifiedJSON = JSON.stringify(getWorkspaceData(), null, 2);
+    return stringifiedJSON;
+  });
+
+  const GetCurrentWorkspace = (() => {
+    return currentWorkspace;
+  });
+
+  const ListWorkspaces = (() => {
+    return workspaceList;
+  });
+
+  //TODO consider how we can allow a custom GUID (commit ID)
+  const CreateWorkspace = ((workspaceName: string) => {
+    addWorkspace(workspaceName);
+  });
+
+  const SetCurrentWorkspace = ((workspace: Workspace) => {
+    switchWorkspace(workspace);
+  });
+
+  (window as any).ThreatComposer = {
+    CreateWorkspace,
+    ExportDataFromCurrentWorkspace,
+    GetCurrentWorkspace,
+    SetCurrentWorkspace,
+    ImportDataIntoCurrentWorkspace,
+    ListWorkspaces,
+  };
+
 
   return {
     getWorkspaceData,
