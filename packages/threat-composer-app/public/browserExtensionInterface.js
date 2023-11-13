@@ -1,5 +1,7 @@
+var browser = (window.browser)? window.browser : window.chrome;
+
 function loadThreatModel() {
-  chrome.storage.local.get("threatModel").then((result) => {
+  browser.storage.local.get("threatModel").then((result) => {
     const answer = result.threatModel;
     window.ThreatComposer.ImportDataIntoCurrentWorkspace(answer);
 
@@ -8,11 +10,6 @@ function loadThreatModel() {
     ).innerText =
       "Insights dashboard for: " + result.threatModel.applicationInfo.name;
   });
-
-  workspaceArea = document.querySelectorAll('[class^="awsui_breadcrumbs"]')[0];
-  if (workspaceArea) {
-    workspaceArea.remove();
-  }
 }
 
 document.addEventListener("visibilitychange", (event) => {

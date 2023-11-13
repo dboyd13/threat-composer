@@ -1,4 +1,5 @@
 (async () => {
+
   console.log("Threat Composer viewer - Content script - Triggered");
 
   if (document.querySelector('[aria-label="Copy raw content"]')) {
