@@ -77,11 +77,12 @@ let handleGitHubCodeViewer = async function () {
 };
 
 let handleAmazonCodeBrowser = async function () {
-  let element = document.getElementById("file_actions");
+  let element = document.getElementsByClassName("cs-Tabs__tab-header-actions");
   if (element && !stop) {
     stop = true;
     fileActionsDiv = document.getElementById("file_actions");
-    var fileActionsButtonGroup = fileActionsDiv.getElementsByClassName("button_group")[0];
+    var fileActionsButtonGroup =
+      fileActionsDiv.getElementsByClassName("button_group")[0];
     var tcListItem = document.createElement("li");
     var tcAnchor = document.createElement("a");
     tcAnchor.setAttribute("class", "minibutton");
@@ -92,6 +93,39 @@ let handleAmazonCodeBrowser = async function () {
     console.log(debugPrefix + "Proactively attempting to retrieve candidate");
     let url = window.location + "?raw=1";
     getTCJSONCandidate(url, tcAnchor);
+  }
+};
+
+let handleCodeCatalystCodeViewer = async function (event) {
+  let element = document.getElementsByClassName(
+    "cs-Tabs__tab-header-actions"
+  )[0];
+  if (element && element.hasChildNodes() && !stop) {
+    stop = true;
+    var tcAnchor = document.createElement("a");
+    tcAnchor.setAttribute(
+      "class",
+      "awsui_button_vjswe_6ozw9_101 awsui_variant-normal_vjswe_6ozw9_126"
+    );
+
+    var tcSpan = document.createElement("span");
+    tcSpan.setAttribute("class", "awsui_content_vjswe_6ozw9_97");
+    tcSpan.textContent = "Edit in Threat Composer";
+
+    tcAnchor.appendChild(tcSpan);
+
+    tcAnchor.onclick = function () {
+      rawText = document.getElementById("raw-div").textContent;
+      jsonObj = JSON.parse(rawText);
+      console.log("sending message");
+      console.log(jsonObj);
+      chrome.runtime.sendMessage(jsonObj);
+    };
+
+    var actionsDiv = document.getElementsByClassName(
+      "cs-Tabs__tab-header-actions"
+    )[0];
+    actionsDiv.appendChild(tcAnchor);
   }
 };
 
@@ -109,14 +143,26 @@ let handleAmazonCodeBrowser = async function () {
       debugPrefix + "Based on URL or parameters, assuming raw file view"
     );
     handleRawFile();
-  } 
-  else if (window.location.href.match(/github.com/)) {
+  } else if (window.location.href.match(/github.com/)) {
     console.log(debugPrefix + "URL is GitHub.com - Assuming code viewer");
     handleGitHubCodeViewer();
     let observerForGitHubCodeViewer = new MutationObserver(
       handleGitHubCodeViewer
     );
     observerForGitHubCodeViewer.observe(document.body, config);
+  } else if (window.location.href.match(/codecatalyst.aws/)) {
+    console.log(debugPrefix + "URL is codecatalyst.aws - Assuming code viewer");
+    //Inject script
+    var s = document.createElement("script");
+    s.src = chrome.runtime.getURL("code_catalyst_inject_script.js");
+    s.onload = function () {
+      this.remove();
+    };
+    (document.head || document.documentElement).appendChild(s);
+    let observerForCodeCatalystCodeViewer = new MutationObserver(
+      handleCodeCatalystCodeViewer
+    );
+    observerForCodeCatalystCodeViewer.observe(document.body, config);
   } else if (window.location.href.match(/code.amazon.com/)) {
     console.log(debugPrefix + "URL is code.amazon.com - Assuming code browser");
     handleAmazonCodeBrowser();
