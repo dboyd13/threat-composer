@@ -1,134 +1,128 @@
-(async () => {
+const debugPrefix = "ThreatComposerExtension: ";
+let stop = false;
+console.log(debugPrefix + "Content script triggered");
 
-  console.log("Threat Composer viewer - Content script - Triggered");
+//Prep global variables
+var tcJSONCandidate = undefined;
+var tcButton = document.createElement("button");
+tcButton.textContent = "View in Threat Composer";
+tcButton.disabled = true;
 
-  if (document.querySelector('[aria-label="Copy raw content"]')) {
-    //Check if GitHub
+let isLikelyThreatComposerSchema = function (JSONobj) {
+  return JSONobj.schema ? true : false;
+};
+
+let getTCJSONCandidate = async function (url, element) {
+  tcJSONCandidate = await fetch(url)
+    .then(function (response) {
+      console.log(debugPrefix + "Able to get a JSON candidate");
+      return response.json();
+    })
+    .catch(function (error) {
+      console.log(debugPrefix + "Error during fetch: " + error.message);
+    });
+
+  if (tcJSONCandidate && isLikelyThreatComposerSchema(tcJSONCandidate)) {
     console.log(
-      "Threat Composer viewer - Content script - Looks like GitHub code view, adding Button"
+      debugPrefix +
+        "Looks like it could be a Threat Composer file, enabling " +
+        element.textContent +
+        " button"
     );
-
-    var raw_button = document.querySelector('[aria-label="Copy raw content"]');
-
-    var tc_button = document.createElement("button");
-    tc_button.textContent = "View in Threat Composer";
-    tc_button.setAttribute("type", "button");
-    tc_button.setAttribute("class", "types__StyledButton-sc-ws60qy-0 kEGrgm");
-    tc_button.setAttribute("data-size", "small");
-
-    raw_button.before(tc_button);
-
-    let url = window.location + "?raw=1";
-
-    fetch(url)
-      .then((res) => res.json())
-      .then(
-        (JSONobject) =>
-          (tc_button.onclick = function () {
-            console.log("sending message");
-            console.log(JSONobject);
-            chrome.runtime.sendMessage(JSONobject);
-          })
-      )
-      .catch((err) => {
-        throw err;
-      });
-  } else if (window.location.href.includes("code.amazon.com")) {
-    //Check if Code Browser
-    console.log(
-      "Threat Composer viewer - Content script - Looks like Code Browser view, adding Button"
-    );
-
-    var file_actions_div = document.getElementById("file_actions");
-    var file_actions_button_group =
-      file_actions_div.getElementsByClassName("button_group")[0];
-
-    var tc_listitem = document.createElement("li");
-    var tc_anchor = document.createElement("a");
-    tc_anchor.setAttribute("class", "minibutton");
-    tc_anchor.textContent = "View in Threat Composer";
-    tc_listitem.appendChild(tc_anchor);
-    file_actions_button_group.appendChild(tc_listitem);
-
-    let url = window.location + "?raw=1";
-
-    fetch(url)
-      .then((res) => res.json())
-      .then(
-        (JSONobject) =>
-          (tc_anchor.onclick = function () {
-            console.log("sending message");
-            console.log(JSONobject);
-            chrome.runtime.sendMessage(JSONobject);
-          })
-      )
-      .catch((err) => {
-        throw err;
-      });
-  } else if (window.location.href.includes("codecatalyst.aws")) {
-    console.log(
-      "Threat Composer viewer - Content script - Appears to be a Code Catalyst view , adding Button"
-    );
-
-    var tc_anchor = document.createElement("a");
-    tc_anchor.setAttribute(
-      "class",
-      "awsui_button_vjswe_6ozw9_101 awsui_variant-normal_vjswe_6ozw9_126"
-    );
-
-    var tc_span = document.createElement("span");
-    tc_span.setAttribute("class", "awsui_content_vjswe_6ozw9_97");
-    tc_span.textContent = "Edit in Threat Composer";
-
-    tc_anchor.appendChild(tc_span);
-
-    tc_anchor.onclick = function () {
-      rawText = document.getElementById("raw-div").textContent;
-      jsonObj = JSON.parse(rawText);
-      console.log("sending message");
-      console.log(jsonObj);
-      chrome.runtime.sendMessage(jsonObj);
+    element.onclick = function () {
+      console.log(
+        debugPrefix +
+          "Sending message with candicate JSON object back service worker / background script"
+      );
+      chrome.runtime.sendMessage(tcJSONCandidate);
     };
-
-    setTimeout(() => {
-      console.log("Delayed for 8 seconds.");
-      var actions_div = document.getElementsByClassName(
-        "cs-Tabs__tab-header-actions"
-      )[0];
-      actions_div.appendChild(tc_anchor);
-      var s = document.createElement("script");
-      s.src = chrome.runtime.getURL("code_catalyst_inject_script.js");
-      s.onload = function () {
-        this.remove();
-      };
-      (document.head || document.documentElement).appendChild(s);
-    }, "8000");
+    element.disabled = false;
   } else {
-    //Assume it's a 'raw' view
+    console.log(
+      debugPrefix +
+        "Does NOT look like it's a Threat Composer file, NOT enabling " +
+        element.textContent +
+        " button"
+    );
+  }
+};
 
-    var rawText = "";
-    var textNodes = [...window.document.childNodes];
-    textNodes.forEach((tn) => (rawText += tn.textContent));
+let handleRawFile = async function () {
+  let element = document.getElementsByTagName("pre");
+  if (element && !stop) {
+    stop = true;
+    document.body.prepend(tcButton);
+    window.scrollTo(0, 0); //Scroll to top
+  }
+  console.log(debugPrefix + "Proactively attempting to retrieve candidate");
+  let url = window.location;
+  getTCJSONCandidate(url, tcButton);
+};
 
-    var JSONobject = JSON.parse(rawText);
+let handleGitHubCodeViewer = async function () {
+  let element = document.querySelector('[aria-label="Copy raw content"]');
+  if (element && !stop) {
+    stop = true;
+    var rawButton = document.querySelector('[aria-label="Copy raw content"]');
+    tcButton.setAttribute("type", "button");
+    tcButton.setAttribute("class", "types__StyledButton-sc-ws60qy-0 kEGrgm");
+    tcButton.setAttribute("data-size", "small");
+    rawButton.before(tcButton);
 
-    if (JSONobject.schema) {
-      console.log(
-        'Threat Composer viewer - Content script - Appears to be a "RAW" Threat Composer JSON file, adding Button'
-      );
-      var button = document.createElement("button");
-      var text = document.createTextNode("View in Threat Composer");
-      button.appendChild(text);
-      document.body.prepend(button);
+    console.log(debugPrefix + "Proactively attempting to retrieve candidate");
+    let url = window.location + "?raw=1";
+    tcElement = tcButton;
+    getTCJSONCandidate(url, tcButton);
+  }
+};
 
-      button.onclick = function () {
-        console.log("sending message");
-        chrome.runtime.sendMessage(JSONobject);
-      };
-    } else {
-      console.log(
-        'Threat Composer viewer - Content script - Appears NOT to be a "RAW" Threat Composer JSON file, NOT adding Button'
-      );
-    }
+let handleAmazonCodeBrowser = async function () {
+  let element = document.getElementById("file_actions");
+  if (element && !stop) {
+    stop = true;
+    fileActionsDiv = document.getElementById("file_actions");
+    var fileActionsButtonGroup = fileActionsDiv.getElementsByClassName("button_group")[0];
+    var tcListItem = document.createElement("li");
+    var tcAnchor = document.createElement("a");
+    tcAnchor.setAttribute("class", "minibutton");
+    tcAnchor.textContent = "View in Threat Composer";
+    tcAnchor.disabled = true;
+    tcListItem.appendChild(tcAnchor);
+    fileActionsButtonGroup.appendChild(tcListItem);
+    console.log(debugPrefix + "Proactively attempting to retrieve candidate");
+    let url = window.location + "?raw=1";
+    getTCJSONCandidate(url, tcAnchor);
+  }
+};
+
+(function () {
+  const config = {
+    childList: true,
+    subtree: true,
+  };
+
+  if (
+    window.location.href.match(/raw.githubusercontent.com/) ||
+    window.location.href.match(/raw=1/)
+  ) {
+    console.log(
+      debugPrefix + "Based on URL or parameters, assuming raw file view"
+    );
+    handleRawFile();
+  } 
+  else if (window.location.href.match(/github.com/)) {
+    console.log(debugPrefix + "URL is GitHub.com - Assuming code viewer");
+    handleGitHubCodeViewer();
+    let observerForGitHubCodeViewer = new MutationObserver(
+      handleGitHubCodeViewer
+    );
+    observerForGitHubCodeViewer.observe(document.body, config);
+  } else if (window.location.href.match(/code.amazon.com/)) {
+    console.log(debugPrefix + "URL is code.amazon.com - Assuming code browser");
+    handleAmazonCodeBrowser();
+    let observerForAmazonCodeBrowser = new MutationObserver(
+      handleAmazonCodeBrowser
+    );
+    observerForAmazonCodeBrowser.observe(document.body, config);
   }
 })();
