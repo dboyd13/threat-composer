@@ -47,6 +47,6 @@ jspm_packages/
 .temp/
 oss-attribution/
 storybook.out/
-.DS_Store
 chrome_ext_build/
 firefox_ext_build/
+.DS_Store

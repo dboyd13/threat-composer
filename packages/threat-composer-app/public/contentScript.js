@@ -110,15 +110,17 @@ let handleCodeCatalystCodeViewer = async function (event) {
 
     var tcSpan = document.createElement("span");
     tcSpan.setAttribute("class", "awsui_content_vjswe_6ozw9_97");
-    tcSpan.textContent = "Edit in Threat Composer";
+    tcSpan.textContent = "View in Threat Composer";
 
     tcAnchor.appendChild(tcSpan);
 
     tcAnchor.onclick = function () {
       rawText = document.getElementById("raw-div").textContent;
       jsonObj = JSON.parse(rawText);
-      console.log("sending message");
-      console.log(jsonObj);
+      console.log(
+        debugPrefix +
+          "Sending message with candicate JSON object back service worker / background script"
+      );
       chrome.runtime.sendMessage(jsonObj);
     };
 

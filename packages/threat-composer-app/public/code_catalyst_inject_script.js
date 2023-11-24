@@ -1,11 +1,18 @@
 const debugPrefix = "ThreatComposerExtension: ";
 var stop = false;
+var raw_content = undefined;
 
 let handleCodeCatalystInject = async function () {
-  element = document.querySelectorAll(".ace_editor")[0];
-  document.querySelectorAll(".ace_editor")[0].setAttribute("id", "ace-editor");
-  editor = window.ace.edit("ace-editor");
-  raw_content = await editor.getSession().getValue()
+  try {
+    element = document.querySelectorAll(".ace_editor")[0];
+    document
+      .querySelectorAll(".ace_editor")[0]
+      .setAttribute("id", "ace-editor");
+    editor = window.ace.edit("ace-editor");
+    raw_content = await editor.getSession().getValue();
+  } catch (err) {
+    //Do nothing
+  }
 
   if (raw_content && !stop) {
     stop = true;
@@ -13,7 +20,7 @@ let handleCodeCatalystInject = async function () {
     var raw_div = document.createElement("div");
     raw_div.setAttribute("id", "raw-div");
     raw_div.hidden = true;
-    raw_div.textContent = raw_content
+    raw_div.textContent = raw_content;
     document.body.appendChild(raw_div);
   }
 };

@@ -9,7 +9,7 @@ const monorepo = new NxMonorepoProject({
   defaultReleaseBranch: "main",
   name: "threat-composer-monorepo",
   devDeps: [
-    "@aws-prototyping-sdk/nx-monorepo@^0.19.2", 
+    "@aws-prototyping-sdk/nx-monorepo@^0.19.2",
     "@aws-prototyping-sdk/pipeline@^0.19.2",
     "@aws-prototyping-sdk/pdk-nag@^0.19.2",
     "eslint-plugin-header",
@@ -28,6 +28,9 @@ monorepo.tryFindObjectFile("package.json")?.addOverride("resolutions.postcss", "
 monorepo.addGitIgnore('.temp/');
 monorepo.addGitIgnore('oss-attribution/');
 monorepo.addGitIgnore('storybook.out/');
+monorepo.addGitIgnore('chrome_ext_build/');
+monorepo.addGitIgnore('firefox_ext_build/');
+monorepo.addGitIgnore('.DS_Store');
 
 monorepo.addTask('export:examples', {
   steps: [
@@ -59,7 +62,7 @@ monorepo.addTask('storybook', {
 monorepo.compileTask.reset('npx nx run-many --target=build --all --skip-nx-cache --nx-bail');
 monorepo.postCompileTask.reset('yarn run generate:attribution && yarn run license:checker');
 
-const uiESModules = [ 
+const uiESModules = [
   "unified",
 ].join("|");
 
@@ -130,7 +133,7 @@ const uiProject = new TypeScriptProject({
       transformIgnorePatterns: [
         `[/\\\\]node_modules[/\\\\](?!${uiESModules}).+\\.(js|jsx|mjs|cjs|ts|tsx)$`,
       ],
-    }, 
+    },
   },
   tsconfig: {
     compilerOptions: {
