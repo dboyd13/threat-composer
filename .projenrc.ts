@@ -226,6 +226,28 @@ infraProject.eslint?.addRules({
   "header/header": [2, "../../header.js"],
 });
 
+const browserExtensionProject = new ReactTypeScriptProject({
+  parent: monorepo,
+  outdir: "packages/threat-composer-browser-extension",
+  defaultReleaseBranch: "main",
+  name: "@aws/threat-composer-browser-extension",
+  deps: [
+    "@cloudscape-design/components",
+    "@cloudscape-design/global-styles",
+    "@cloudscape-design/design-tokens",
+  ],
+  devDeps: [
+    "@types/react-router-dom"
+  ]
+});
+
+browserExtensionProject.eslint?.addPlugins('header');
+browserExtensionProject.eslint?.addRules({
+  "header/header": [2, "../../header.js"],
+});
+
+browserExtensionProject.testTask.reset('react-scripts test --watchAll=false --passWithNoTests');
+
 monorepo.addImplicitDependency(appProject, uiProject);
 monorepo.addImplicitDependency(infraProject, appProject);
 

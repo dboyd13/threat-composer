@@ -66,6 +66,7 @@
   "private": true,
   "workspaces": {
     "packages": [
+      "packages/threat-composer-browser-extension",
       "packages/threat-composer",
       "packages/threat-composer-app",
       "packages/threat-composer-infra"
