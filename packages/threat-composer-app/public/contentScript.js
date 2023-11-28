@@ -1,5 +1,9 @@
-let stop = false;
+let tcStopProcessingGitHub = false;
+let tcStopProcessingRaw = false;
+let tcStopProcessingCodeCatalyst = false;
+let tcStopProcessingAmazonCode = false;
 let gitHubPreviousURL = "";
+
 
 //Prep global variables
 const tcFileExtension = ".tc.json";
@@ -57,8 +61,8 @@ let getTCJSONCandidate = async function (url, element) {
 
 let handleRawFile = async function () {
   let element = document.getElementsByTagName("pre");
-  if (element && !stop) {
-    stop = true;
+  if (element && !tcStopProcessingRaw) {
+    tcStopProcessingRaw = true;
     document.body.prepend(tcButton);
     window.scrollTo(0, 0); //Scroll to top
   }
@@ -74,10 +78,10 @@ let handleGitHubCodeViewer = async function () {
     if (window.location.href != gitHubPreviousURL) {
       //Handle GitHub being a SPA
       gitHubPreviousURL = window.location.href;
-      stop = false;
+      tcStopProcessingGitHub = false;
     }
-    if (element && !stop) {
-      stop = true;
+    if (element && !tcStopProcessingGitHub) {
+      tcStopProcessingGitHub = true;
       var rawButton = document.querySelector('[aria-label="Copy raw content"]');
       tcButton.setAttribute("type", "button");
       tcButton.setAttribute("class", "types__StyledButton-sc-ws60qy-0 kEGrgm");
@@ -86,7 +90,6 @@ let handleGitHubCodeViewer = async function () {
 
       logDebugMessage("Proactively attempting to retrieve candidate");
       let url = window.location + "?raw=1";
-      tcElement = tcButton;
       getTCJSONCandidate(url, tcButton);
     }
   }
@@ -94,8 +97,8 @@ let handleGitHubCodeViewer = async function () {
 
 let handleAmazonCodeBrowser = async function () {
   let element = document.getElementsByClassName("cs-Tabs__tab-header-actions");
-  if (element && !stop) {
-    stop = true;
+  if (element && !tcStopProcessingAmazonCode) {
+    tcStopProcessingAmazonCode = true;
     fileActionsDiv = document.getElementById("file_actions");
     var fileActionsButtonGroup =
       fileActionsDiv.getElementsByClassName("button_group")[0];
@@ -116,8 +119,8 @@ let handleCodeCatalystCodeViewer = async function (event) {
   let element = document.getElementsByClassName(
     "cs-Tabs__tab-header-actions"
   )[0];
-  if (element && element.hasChildNodes() && !stop) {
-    stop = true;
+  if (element && element.hasChildNodes() && !tcStopProcessingCodeCatalyst) {
+    tcStopProcessingCodeCatalyst = true;
     var tcAnchor = document.createElement("a");
     tcAnchor.setAttribute(
       "class",
