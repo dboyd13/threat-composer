@@ -41,7 +41,7 @@ const StandaloneAppLayout: FC<PropsWithChildren<StandaloneAppLayoutProps>> = ({
     const urlParams = new URLSearchParams(window.location.search);
     const mode = urlParams.get('mode');
     const href = props.href || '/';
-    return mode ? `${href}/?mode=${mode}` : href;
+    return mode ? `${href}?mode=${mode}` : href;
   }, [props]);
 
   return (<div style={{

@@ -104,7 +104,7 @@ const AppLayout: FC<PropsWithChildren<AppLayoutProps>> = ({
   const headerHref = useMemo(() => {
     const mode = searchParams.get(SEARCH_PARAM_MODE);
     const href = 'href' in props ? props.href : '/';
-    return mode ? `${href}/?mode=${mode}` : href;
+    return mode ? `${href}?mode=${mode}` : href;
   }, [searchParams]);
 
   const [tools, setTools] = useState(props.tools);
