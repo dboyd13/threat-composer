@@ -37,7 +37,8 @@ import useNotifications from '../../hooks/useNotifications';
 import generateUrl from '../../utils/generateUrl';
 import WorkspaceSelector from '../WorkspaceSelector';
 
-const defaultHref = '/';
+const ROUTE_BASE_PATH = process.env.REACT_APP_ROUTE_BASE_PATH;
+const defaultHref = ROUTE_BASE_PATH || '/';
 
 const AppLayout: FC<PropsWithChildren<{}>> = ({
   children,
